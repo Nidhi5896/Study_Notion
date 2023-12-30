@@ -44,6 +44,11 @@ const userSchema= new mongoose.Schema({
             required:true,
             ref:"courseProgress",
          },
+         token:{
+            type:String,
+            required:true,
+         },
+         
 
 
 });

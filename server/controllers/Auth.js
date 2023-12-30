@@ -3,18 +3,71 @@ const OTP= require("../models/OTP");
 const otpGenerator=require("otp-generator");
 const Profile= require("../models/Profile");
 const bcrypt = require("bcrypt");
+const JWT=require("jsonwebtoken");
+require("dotenv").config();
 
 
 // login
 exports.login=async(req,res)=>{
     try {
-        
+        //get data from req.body
+         const {email, password}= req.body;
+
+        //validation of data
+        if(!email||!password){
+            return res.status(403).json({
+                success:false,
+                message:"all fields are requires=d",
+            })
+        }
+        //if user exist
+        const userExist= await User.findOne({email});
+        if(!userExist){
+            return res.status(400).json({
+                success:false,
+                message:"user is not registered",
+            })
+        }
+        //generate JWT token
+        if(await bcrypt.compare(password,userExist.password)){
+            const payload ={
+                email:userExist.email,
+                id:userExist._id,
+                accountType:userExist.accountType,
+            }
+            const token= jwr.sign(payload,process.env.JWT_SECRETE,{
+                expiresIn:"2h",
+            });
+            userExist.token=token;
+            userExist.password=undefined;
+
+             //create cookie and send response
+             const options={
+                expires: new Date(Date.now()+3*24*60*60*1000),
+                httpOlnly:true,
+             }
+             res.cookie("token",token,options).status(200).json({
+                success:true,
+                token,
+                userExist,
+             })
+        }
+        else{
+            return res.status(401).json({
+                success:false,
+                message:"password is incorrect",
+            })
+        }
+       
     } catch (error) {
-        
+        return res.status(500).json({
+            success:false,
+            message:"login faliure, please try again!",
+        })
     }
 }
 // register
-exports.register=async(req, res)=>{
+    exports.register=async(req, res)=>{
         try {
             const {firstname,lastname,email,password, confirmPassword,accountType,otp}=req.body;
 
@@ -138,3 +191,9 @@ exports.sendOTP=async(req,res) => {
 };
 
 //changePassword
+
+//get data
+//get old pass word, new passwor, confirmpasword
+//validation
+//update
+//return response
